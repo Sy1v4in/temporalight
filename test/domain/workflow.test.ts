@@ -18,46 +18,48 @@ describe('Given a workflow nested in a worker', () => {
 
   let eventBus: EventBus
 
-  beforeEach(() => {
-    eventBus = new InMemoryEventBus()
-    createWorker(eventBus)(workflow('Greet', greet))
-  })
-
-  describe('the worker proxy runner', () => {
-    let workerProxy: WorkerProxy
-
+  describe('with an in-memory event bus', () => {
     beforeEach(() => {
-      workerProxy = createWorkerProxy(eventBus)
+      eventBus = new InMemoryEventBus()
+      createWorker(eventBus)(workflow('Greet', greet))
     })
 
-    it('should return the workflow result when running', async () => {
-      const workflowResult = await workerProxy.run({
-        workflowName: 'Greet',
-        workflowId: '123',
-        payload: 'Jane Doe',
+    describe('the worker proxy runner', () => {
+      let workerProxy: WorkerProxy
+
+      beforeEach(() => {
+        workerProxy = createWorkerProxy(eventBus)
       })
 
-      assert.strictEqual(workflowResult, 'Hello, Jane Doe!')
-    })
+      it('should return the workflow result when running', async () => {
+        const workflowResult = await workerProxy.run({
+          workflowName: 'Greet',
+          workflowId: '123',
+          payload: 'Jane Doe',
+        })
 
-    it('should return the workflow started status when starting', async () => {
-      const isWorkflowStarted = await workerProxy.start({
-        workflowName: 'Greet',
-        workflowId: '123',
-        payload: 'Jane Doe',
+        assert.strictEqual(workflowResult, 'Hello, Jane Doe!')
       })
 
-      assert.strictEqual(isWorkflowStarted, true)
-    })
+      it('should return the workflow started status when starting', async () => {
+        const isWorkflowStarted = await workerProxy.start({
+          workflowName: 'Greet',
+          workflowId: '123',
+          payload: 'Jane Doe',
+        })
 
-    it('should return the workflow NOT started result when starting without workflow', async () => {
-      const isWorkflowStarted = await workerProxy.start({
-        workflowName: 'UnregisteredWorkflowName',
-        workflowId: '123',
-        payload: 'Jane Doe',
+        assert.strictEqual(isWorkflowStarted, true)
       })
 
-      assert.strictEqual(isWorkflowStarted, false)
+      it('should return the workflow NOT started result when starting without workflow', async () => {
+        const isWorkflowStarted = await workerProxy.start({
+          workflowName: 'UnregisteredWorkflowName',
+          workflowId: '123',
+          payload: 'Jane Doe',
+        })
+
+        assert.strictEqual(isWorkflowStarted, false)
+      })
     })
   })
 })
