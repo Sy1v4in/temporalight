@@ -3,6 +3,7 @@
   "name": "temporalight",
   "scripts": {
     "start:dev": "npm run ts",
+    "test": "npm run ts -- --test test/**/*.test.ts",
     "ts": "node --require esbuild-register",
     "type-check": "tsc --project tsconfig.json --noEmit",
     "lint": "yarn type-check && eslint ./src",
