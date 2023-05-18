@@ -1,6 +1,6 @@
 import { Workflow } from './workflow'
 
-export type Listener = (arg: any) => any
+export type Listener = (...arg: any[]) => any
 
 export type EventBus = {
   on: (eventName: string, listener: Listener) => void

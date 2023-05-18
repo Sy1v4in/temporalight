@@ -12,8 +12,10 @@ class WebSocketClientEventBus implements EventBus {
 
   on(eventName: string, listener: Listener): void {
     this.#socket.on(eventName, (...args) => {
+      const listenerArgs = args.slice(0, -1)
+      listener(...listenerArgs)
+
       const ackCallback = args[args.length - 1]
-      listener(args.slice(0, -1))
       ackCallback('ACK')
     })
   }
