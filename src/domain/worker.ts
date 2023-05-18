@@ -68,8 +68,12 @@ const executeWorkflow =
         }
       })
 
-      const response = eventBus.send(workerPayload.workflowName, workerPayload)
-      if (!waitForResult) resolve(response)
+      eventBus
+        .send(workerPayload.workflowName, workerPayload)
+        .then((response) => {
+          if (!waitForResult) resolve(response)
+        })
+        .catch(reject)
     })
 
 export { createWorker, runtimeId, createWorkerProxy }
