@@ -20,6 +20,12 @@ export type WorkerProxy = {
   run: (workerPayload: WorkerPayload) => Promise<unknown>
 }
 
+export class NoWorkflow extends Error {
+  constructor(workflowName: string) {
+    super(`There are no workflows registered with name "${workflowName}"`)
+  }
+}
+
 const runtimeId = (worker: WorkerPayload): string => `${worker.workflowName}:${worker.workflowId}`
 
 const createWorker =
