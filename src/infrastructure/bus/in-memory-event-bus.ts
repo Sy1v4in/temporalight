@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events'
 
-import { EventBus, Listener } from '../../domain/worker'
+import { EventBus, Listener, NoWorkflow } from '../../domain/worker'
 
 class InMemoryEventBus implements EventBus {
   #eventEmitter: EventEmitter
@@ -18,7 +18,9 @@ class InMemoryEventBus implements EventBus {
   }
 
   async send<Event>(eventName: string, event: Event): Promise<boolean> {
-    return this.#eventEmitter.emit(eventName, event)
+    const hasBeenEmitted = this.#eventEmitter.emit(eventName, event)
+    if (!hasBeenEmitted) throw new NoWorkflow(eventName)
+    return hasBeenEmitted
   }
 
   async close(): Promise<void> {

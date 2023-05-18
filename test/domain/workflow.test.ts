@@ -1,10 +1,11 @@
-import * as assert from 'assert'
-import { beforeEach, describe, it } from 'node:test'
+import assert from 'node:assert/strict'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import {
   createWorker,
   createWorkerProxy,
   EventBus,
+  NoWorkflow,
   WorkerProxy,
 } from '@workflow-runner/domain/worker'
 import { workflow } from '@workflow-runner/domain/workflow'
@@ -51,14 +52,23 @@ describe('Given a workflow nested in a worker', () => {
         assert.strictEqual(isWorkflowStarted, true)
       })
 
-      it('should return the workflow NOT started result when starting without workflow', async () => {
-        const isWorkflowStarted = await workerProxy.start({
-          workflowName: 'UnregisteredWorkflowName',
-          workflowId: '123',
-          payload: 'Jane Doe',
-        })
-
-        assert.strictEqual(isWorkflowStarted, false)
+      it('should throw a NoWorkflow error when starting without workflow', async () => {
+        await assert.rejects(
+          async () =>
+            workerProxy.start({
+              workflowName: 'UnregisteredWorkflowName',
+              workflowId: '123',
+              payload: 'Jane Doe',
+            }),
+          (err: Error) => {
+            assert.ok(err instanceof NoWorkflow)
+            assert.strictEqual(
+              err.message,
+              'There are no workflows registered with name "UnregisteredWorkflowName"',
+            )
+            return true
+          },
+        )
       })
     })
   })
