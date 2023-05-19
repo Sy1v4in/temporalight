@@ -37,6 +37,9 @@ class WebSocketEventBus implements EventBus {
   }
 
   async send<Event>(eventName: string, event: Event): Promise<boolean> {
+    if (this.#sockets.size === 0) {
+      throw new NoWorkflow(eventName)
+    }
     try {
       await this.#server.timeout(1000).emitWithAck(eventName, event)
       return true

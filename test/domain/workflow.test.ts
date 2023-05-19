@@ -76,7 +76,7 @@ describe('Given a workflow nested in a worker', () => {
   })
 
   describe('with a websocket event bus', () => {
-    const port = 4444
+    const port = 1234
     let workerEventBus: EventBus
 
     beforeEach(() => {
@@ -89,6 +89,17 @@ describe('Given a workflow nested in a worker', () => {
     afterEach(async () => {
       await workerEventBus.close()
       await eventBus.close()
+    })
+
+    it('should throw a NoWorkflow error when starting without any workflow', async () => {
+      await assert.rejects(
+        async () => eventBus.send('Greet', 'Jane Doe'),
+        (err: Error) => {
+          assert.ok(err instanceof NoWorkflow)
+          assert.strictEqual(err.message, 'There are no workflows registered with name "Greet"')
+          return true
+        },
+      )
     })
 
     describe('the worker proxy runner', () => {
