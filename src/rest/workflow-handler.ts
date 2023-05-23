@@ -2,7 +2,7 @@ import { Handler } from '@tinyhttp/app'
 
 import { Dependencies, StatusCode, WorkerBody } from './types'
 import { createWorkerProxy } from '../domain/worker'
-import { NoWorkflow } from '@workflow-runner/domain/errors'
+import { BusinessError } from '@workflow-runner/domain/errors'
 
 const runWorkflowHandler: (dep: Dependencies) => Handler = ({ logger, ...ports }) => {
   const workerProxy = createWorkerProxy(ports)
@@ -13,7 +13,7 @@ const runWorkflowHandler: (dep: Dependencies) => Handler = ({ logger, ...ports }
       await workerProxy.start(worker)
       res.status(StatusCode.OK).send(`${worker.workflowName} started`)
     } catch (e) {
-      if (e instanceof NoWorkflow) {
+      if (e instanceof BusinessError) {
         res.status(StatusCode.BAD_REQUEST).send(e.message)
       } else {
         res.status(StatusCode.INTERNAL_ERROR).send('An internal error has occurred')
