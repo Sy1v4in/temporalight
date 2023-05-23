@@ -1,7 +1,4 @@
-export interface Workflow<Payload = unknown, Response = unknown> {
-  name: string
-  run: (args: Payload) => Promise<Response>
-}
+import { Workflow } from './types'
 
 const workflow = <Payload = unknown, Response = unknown>(
   workflowName: string,

@@ -1,7 +1,8 @@
 import { Handler } from '@tinyhttp/app'
 
 import { Dependencies, StatusCode, WorkerBody } from './types'
-import { createWorkerProxy, NoWorkflow } from '@workflow-runner/domain/worker'
+import { createWorkerProxy } from '../domain/worker'
+import { NoWorkflow } from '@workflow-runner/domain/errors'
 
 const runWorkflowHandler: (dep: Dependencies) => Handler = ({ eventBus }) => {
   const workerProxy = createWorkerProxy(eventBus)

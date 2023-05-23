@@ -1,13 +1,10 @@
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
-import {
-  createWorker,
-  createWorkerProxy,
-  EventBus,
-  NoWorkflow,
-  WorkerProxy,
-} from '@workflow-runner/domain/worker'
+import { NoWorkflow } from '@workflow-runner/domain/errors'
+import { EventBus } from '@workflow-runner/domain/ports'
+import { WorkerProxy } from '@workflow-runner/domain/types'
+import { createWorker, createWorkerProxy } from '@workflow-runner/domain/worker'
 import { workflow } from '@workflow-runner/domain/workflow'
 import { InMemoryEventBus } from '@workflow-runner/infrastructure/bus/in-memory-event-bus'
 import { createEventBus } from '@workflow-runner/infrastructure/bus/ws'

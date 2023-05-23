@@ -1,5 +1,6 @@
 import { Logger } from '../core/logger'
-import { EventBus, WorkerPayload } from '../domain/worker'
+import { EventBus } from '../domain/ports'
+import { WorkerPayload } from '../domain/types'
 
 export type Dependencies = {
   logger: Logger
