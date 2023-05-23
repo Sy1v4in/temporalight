@@ -4,8 +4,8 @@ import { Dependencies, StatusCode, WorkerBody } from './types'
 import { createWorkerProxy } from '../domain/worker'
 import { NoWorkflow } from '@workflow-runner/domain/errors'
 
-const runWorkflowHandler: (dep: Dependencies) => Handler = ({ eventBus }) => {
-  const workerProxy = createWorkerProxy(eventBus)
+const runWorkflowHandler: (dep: Dependencies) => Handler = ({ logger, ...ports }) => {
+  const workerProxy = createWorkerProxy(ports)
   return async (req, res) => {
     const worker: WorkerBody = req.body
 
