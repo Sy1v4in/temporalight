@@ -21,3 +21,8 @@ export type WorkflowRepository = {
   save: (workflowRuntime: WorkflowRuntime) => Promise<void>
   find: (workflowRuntimeId: string) => Promise<Nullable<WorkflowRuntime>>
 }
+
+export type Ports = {
+  eventBus: EventBus
+  repository: WorkflowRepository
+}
