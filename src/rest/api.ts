@@ -8,8 +8,10 @@ import { runWorkflowHandler } from './workflow-handler'
 
 const httPort = parseInt(process.env.HTTP_PORT ?? '3333')
 
-const create = ({ logger, eventBus }: Dependencies): App =>
-  new App().use(bodyParser.json()).post('/workflows', runWorkflowHandler({ logger, eventBus }))
+const create = ({ logger, eventBus, repository }: Dependencies): App =>
+  new App()
+    .use(bodyParser.json())
+    .post('/workflows', runWorkflowHandler({ logger, eventBus, repository }))
 
 const start =
   ({ logger }: Dependencies) =>

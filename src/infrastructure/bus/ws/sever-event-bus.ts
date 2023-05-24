@@ -1,7 +1,8 @@
 import { Server as SocketServer, Socket } from 'socket.io'
 
 import { ServerOptions } from './types'
-import { EventBus, Listener, NoWorkflow } from '../../../domain/worker'
+import { NoWorkflow } from '@workflow-runner/domain/errors'
+import { EventBus, Listener } from '@workflow-runner/domain/ports'
 
 class WebSocketEventBus implements EventBus {
   #server: SocketServer

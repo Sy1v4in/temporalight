@@ -1,17 +1,15 @@
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
-import {
-  createWorker,
-  createWorkerProxy,
-  EventBus,
-  NoWorkflow,
-  WorkerProxy,
-} from '@workflow-runner/domain/worker'
+import { NoWorkflow } from '@workflow-runner/domain/errors'
+import { EventBus, WorkflowRepository } from '@workflow-runner/domain/ports'
+import { WorkerProxy } from '@workflow-runner/domain/types'
+import { createWorker, createWorkerProxy } from '@workflow-runner/domain/worker'
 import { workflow } from '@workflow-runner/domain/workflow'
 import { InMemoryEventBus } from '@workflow-runner/infrastructure/bus/in-memory-event-bus'
 import { createEventBus } from '@workflow-runner/infrastructure/bus/ws'
 import { WebSocketEventBus } from '@workflow-runner/infrastructure/bus/ws/sever-event-bus'
+import { InMemoryWorkflowRepository } from '@workflow-runner/infrastructure/repository/in-memory/workflow'
 
 describe('Given a workflow nested in a worker', () => {
   const greet = async (name: string): Promise<string> => {
@@ -19,11 +17,12 @@ describe('Given a workflow nested in a worker', () => {
     return `Hello, ${name}!`
   }
 
-  let eventBus: EventBus
+  let eventBus: EventBus, repository: WorkflowRepository
 
   describe('with an in-memory event bus', () => {
     beforeEach(() => {
       eventBus = new InMemoryEventBus()
+      repository = new InMemoryWorkflowRepository()
       createWorker(eventBus)(workflow('Greet', greet))
     })
 
@@ -31,7 +30,7 @@ describe('Given a workflow nested in a worker', () => {
       let workerProxy: WorkerProxy
 
       beforeEach(() => {
-        workerProxy = createWorkerProxy(eventBus)
+        workerProxy = createWorkerProxy({ eventBus, repository })
       })
 
       it('should return the workflow result when running', async () => {
@@ -106,7 +105,7 @@ describe('Given a workflow nested in a worker', () => {
       let workerProxy: WorkerProxy
 
       beforeEach(async () => {
-        workerProxy = createWorkerProxy(eventBus)
+        workerProxy = createWorkerProxy({ eventBus, repository })
         await (eventBus as WebSocketEventBus).waitUntilReady()
       })
 

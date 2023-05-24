@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events'
 
-import { EventBus, Listener, NoWorkflow } from '../../domain/worker'
+import { NoWorkflow } from '../../domain/errors'
+import { EventBus, Listener } from '../../domain/ports'
 
 class InMemoryEventBus implements EventBus {
   #eventEmitter: EventEmitter

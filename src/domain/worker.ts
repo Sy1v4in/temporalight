@@ -1,30 +1,6 @@
-import { Workflow } from './workflow'
-
-export type Listener = (...arg: any[]) => any
-
-export type EventBus = {
-  on: (eventName: string, listener: Listener) => void
-  off: (eventName: string) => void
-  send: <Event = unknown>(eventName: string, event: Event) => Promise<boolean>
-  close: () => Promise<void>
-}
-
-export type WorkerPayload<Payload = unknown> = {
-  workflowName: string
-  workflowId: string
-  payload: Payload
-}
-
-export type WorkerProxy = {
-  start: (workerPayload: WorkerPayload) => Promise<unknown>
-  run: (workerPayload: WorkerPayload) => Promise<unknown>
-}
-
-export class NoWorkflow extends Error {
-  constructor(workflowName: string) {
-    super(`There are no workflows registered with name "${workflowName}"`)
-  }
-}
+import { WorkerPayload, WorkerProxy, Workflow } from './types'
+import { AlreadyExistingWorkflow } from '@workflow-runner/domain/errors'
+import { EventBus, Ports } from '@workflow-runner/domain/ports'
 
 const runtimeId = (worker: WorkerPayload): string => `${worker.workflowName}:${worker.workflowId}`
 
@@ -43,37 +19,66 @@ const createWorker =
     })
   }
 
-const createWorkerProxy = (eventBus: EventBus): WorkerProxy => {
+const createWorkerProxy = (ports: Ports): WorkerProxy => {
   return {
-    start: executeWorkflow(eventBus, false),
-    run: executeWorkflow(eventBus, true),
+    start: executeWorkflow(ports, false),
+    run: executeWorkflow(ports, true),
   }
 }
 
 const executeWorkflow =
-  (eventBus: EventBus, waitForResult: boolean) => (workerPayload: WorkerPayload) =>
+  ({ eventBus, repository }: Ports, waitForResult: boolean) =>
+  (workerPayload: WorkerPayload) =>
     new Promise((resolve, reject) => {
       const workflowId = runtimeId(workerPayload)
-      eventBus.on(workflowId, (runtime) => {
-        switch (runtime.status) {
-          case 'STARTED':
-            break
-          case 'SUCCEED':
-            eventBus.off(workflowId)
-            if (waitForResult) resolve(runtime.result)
-            break
-          case 'FAIL':
-            eventBus.off(workflowId)
-            if (waitForResult) reject(runtime.error)
-        }
-      })
+      repository
+        .find(workflowId)
+        .then((existingWorkflow) => {
+          if (existingWorkflow) throw new AlreadyExistingWorkflow(workflowId)
 
-      eventBus
-        .send(workerPayload.workflowName, workerPayload)
-        .then((response) => {
-          if (!waitForResult) resolve(response)
+          eventBus.on(workflowId, (runtime) => {
+            switch (runtime.status) {
+              case 'STARTED':
+                repository.save({
+                  name: workerPayload.workflowName,
+                  id: workflowId,
+                  status: 'STARTED',
+                })
+                break
+              case 'SUCCEED':
+                eventBus.off(workflowId)
+                repository
+                  .save({
+                    name: workerPayload.workflowName,
+                    id: workflowId,
+                    status: 'SUCCEED',
+                  })
+                  .then(() => {
+                    if (waitForResult) resolve(runtime.result)
+                  })
+                break
+              case 'FAIL':
+                eventBus.off(workflowId)
+                repository
+                  .save({
+                    name: workerPayload.workflowName,
+                    id: workflowId,
+                    status: 'SUCCEED',
+                  })
+                  .then(() => {
+                    if (waitForResult) reject(runtime.error)
+                  })
+            }
+          })
+
+          eventBus
+            .send(workerPayload.workflowName, workerPayload)
+            .then((response) => {
+              if (!waitForResult) resolve(response)
+            })
+            .catch(reject)
         })
         .catch(reject)
     })
 
-export { createWorker, runtimeId, createWorkerProxy }
+export { createWorker, createWorkerProxy }
