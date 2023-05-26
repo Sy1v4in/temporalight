@@ -3,10 +3,10 @@ version: '3.9'
 services:
   mongodb-temporalight:
     container_name: 'mongodb_temporalight'
-    image: mongodb/mongodb-community-server:${MONGODB_VERSION}
+    image: mongodb/mongodb-community-server:6.0.3-ubi8
     restart: always
     ports:
       - "27017:27017"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: rootpass
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=rootpass
