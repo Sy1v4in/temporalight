@@ -6,7 +6,7 @@
     "test": "npm run ts -- --test test/**/*.test.ts",
     "ts": "node --require esbuild-register",
     "type-check": "tsc --project tsconfig.json --noEmit",
-    "lint": "yarn type-check && eslint ./src",
+    "lint": "npm run type-check && eslint ./src",
     "format": "npm run lint --fix"
   },
   "dependencies": {
