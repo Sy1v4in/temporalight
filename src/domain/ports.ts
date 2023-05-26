@@ -1,4 +1,4 @@
-import { Nullable } from '@workflow-runner/core/types'
+import { Nullable } from '../core/types'
 
 export type Listener = (...arg: any[]) => any
 

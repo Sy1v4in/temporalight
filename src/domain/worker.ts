@@ -1,6 +1,6 @@
 import { WorkerPayload, WorkerProxy, Workflow } from './types'
-import { AlreadyExistingWorkflow } from '@workflow-runner/domain/errors'
-import { EventBus, Ports } from '@workflow-runner/domain/ports'
+import { AlreadyExistingWorkflow } from '../domain/errors'
+import { EventBus, Ports } from '../domain/ports'
 
 const runtimeId = (worker: WorkerPayload): string => `${worker.workflowName}:${worker.workflowId}`
 
