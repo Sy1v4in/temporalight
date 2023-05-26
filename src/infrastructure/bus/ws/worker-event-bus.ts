@@ -1,7 +1,7 @@
 import { io, Socket as ClientSocket } from 'socket.io-client'
 
 import { ClientOptions } from './types'
-import { EventBus, Listener } from '@workflow-runner/domain/ports'
+import { EventBus, Listener } from '../../../domain/ports'
 
 class WebSocketClientEventBus implements EventBus {
   #socket: ClientSocket

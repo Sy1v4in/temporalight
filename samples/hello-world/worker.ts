@@ -1,7 +1,8 @@
-import { WS_PORT } from './utils'
 import { createWorker } from '@workflow-runner/domain/worker'
 import { workflow } from '@workflow-runner/domain/workflow'
 import { createEventBus } from '@workflow-runner/infrastructure/bus/ws'
+
+const WS_PORT = 4444
 
 const greet = async (name: string): Promise<string> => {
   console.log('Execute the greet workflow', name)

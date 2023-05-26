@@ -1,0 +1,16 @@
+version: '3.9'
+
+services:
+  temporalight:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+      - NODE_VERSION=20.1.0
+    image: temporalight
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - MONGODB_URL=mongodb://root:rootpass@mongodb-temporalight:27017
+    ports:
+      - "3333:3333"
+      - "4444:4444"

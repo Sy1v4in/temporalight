@@ -3,18 +3,15 @@ set -e
 
 cd -P -- "$(dirname -- "$0")"
 
-MONGODB_VERSION="6.0.3-ubi8"
-export MONGODB_VERSION
-
 compose_file=../docker-compose.yml
 
 if [[ ("$#" -eq 0) || ("$#" -eq 1 && "$1" == "start") ]]
 then
-  echo start mongo:"${MONGODB_VERSION}"
+  echo "start mongodb"
   docker compose --file ${compose_file} up --detach
 elif [[ ("$#" -eq 1 && "$1" == "start-with-volumes") ]]
 then
-  echo start mongo:"${MONGODB_VERSION}"
+  echo "start mongodb with local persistence"
   docker compose --file ${compose_file} --file ${compose_file_stateful} up --detach
 elif [[ ("$#" -eq 1 && "$1" == "stop") ]]
 then

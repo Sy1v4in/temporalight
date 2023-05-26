@@ -1,6 +1,6 @@
 import { Collection, Db, MongoClient } from 'mongodb'
 
-import { WorkflowRepository, WorkflowRuntime } from '@workflow-runner/domain/ports'
+import { WorkflowRepository, WorkflowRuntime } from '../../../domain/ports'
 
 class MongoWorkflowRepository implements WorkflowRepository {
   #workflows: Collection<WorkflowRuntime>

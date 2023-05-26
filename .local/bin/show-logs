@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -e
+
+cd -P -- "$(dirname -- "$0")"
+
+docker compose --file ../docker-compose.yml --file ../docker-compose-app.yml logs --no-log-prefix --follow temporalight
+
+cd -

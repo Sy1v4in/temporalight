@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -e
+
+cd -P -- "$(dirname -- "$0")"
+
+if [[ ("$#" -eq 0) || ("$#" -eq 1 && "$1" == "start") ]]
+then
+  echo "build and start app"
+  docker compose --file ../docker-compose-app.yml build
+  docker compose --file ../docker-compose.yml --file ../docker-compose-app.yml up --detach
+elif [[ ("$#" -eq 1 && "$1" == "stop") ]]
+then
+  echo "stop app"
+  docker compose --file ../docker-compose.yml --file ../docker-compose-app.yml down
+fi
+
+cd -

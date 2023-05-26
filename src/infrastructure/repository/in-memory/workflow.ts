@@ -1,4 +1,4 @@
-import { WorkflowRepository, WorkflowRuntime } from '@workflow-runner/domain/ports'
+import { WorkflowRepository, WorkflowRuntime } from '../../../domain/ports'
 
 class InMemoryWorkflowRepository implements WorkflowRepository {
   #register: Map<string, WorkflowRuntime>
