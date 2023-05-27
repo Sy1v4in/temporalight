@@ -19,10 +19,13 @@ describe('Given a workflow nested in a worker', () => {
 
   let eventBus: EventBus, repository: WorkflowRepository
 
+  beforeEach(() => {
+    repository = new InMemoryWorkflowRepository()
+  })
+
   describe('with an in-memory event bus', () => {
     beforeEach(() => {
       eventBus = new InMemoryEventBus()
-      repository = new InMemoryWorkflowRepository()
       createWorker(eventBus)(workflow('Greet', greet))
     })
 

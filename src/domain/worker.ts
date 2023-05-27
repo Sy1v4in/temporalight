@@ -58,8 +58,13 @@ const executeWorkflow =
               .then(applyResolve)
           })
 
-          eventBus
-            .send(workerPayload.workflowName, workerPayload)
+          repository
+            .save({
+              name: workerPayload.workflowName,
+              id: workflowId,
+              status: 'UNINITIALIZED',
+            })
+            .then(() => eventBus.send(workerPayload.workflowName, workerPayload))
             .then((response) => {
               if (!waitForResult) resolve(response)
             })
