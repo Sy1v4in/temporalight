@@ -10,18 +10,12 @@ import { InMemoryEventBus } from '@workflow-runner/infrastructure/bus/in-memory-
 import { InMemoryWorkflowRepository } from '@workflow-runner/infrastructure/repository/in-memory/workflow'
 
 describe('Given a worker', () => {
-  const greet = async (name: string): Promise<string> => {
-    console.log('Execute the greet workflow', name)
-    return `Hello, ${name}!`
-  }
-
   let eventBus: EventBus, repository: WorkflowRepository
 
   describe('with an in-memory event bus', () => {
     beforeEach(() => {
       eventBus = new InMemoryEventBus()
       repository = new InMemoryWorkflowRepository()
-      createWorker(eventBus)(workflow('Greet', greet))
     })
 
     describe('the proxy runner', () => {
@@ -31,26 +25,70 @@ describe('Given a worker', () => {
         workerProxy = createWorkerProxy({ eventBus, repository })
       })
 
-      it('should throw an AlreadyExistingWorkflow error when starting a workflow 2 times', async () => {
-        await workerProxy.start({
-          workflowName: 'Greet',
-          workflowId: '123',
-          payload: 'Jane Doe',
+      describe('for a successful workflow', () => {
+        const greet = async (name: string): Promise<string> => {
+          console.log('Execute the greet workflow', name)
+          return `Hello, ${name}!`
+        }
+
+        beforeEach(() => {
+          createWorker(eventBus)(workflow('Greet', greet))
         })
 
-        await assert.rejects(
-          async () =>
-            workerProxy.start({
-              workflowName: 'Greet',
-              workflowId: '123',
-              payload: 'Jane Doe',
-            }),
-          (err: Error) => {
-            assert.ok(err instanceof AlreadyExistingWorkflow)
-            assert.strictEqual(err.message, 'Workflow "Greet:123" has already been executed')
-            return true
-          },
-        )
+        it('should throw an AlreadyExistingWorkflow error when starting a workflow 2 times', async () => {
+          await workerProxy.start({
+            workflowName: 'Greet',
+            workflowId: '123',
+            payload: 'Jane Doe',
+          })
+
+          await assert.rejects(
+            async () =>
+              workerProxy.start({
+                workflowName: 'Greet',
+                workflowId: '123',
+                payload: 'Jane Doe',
+              }),
+            (err: Error) => {
+              assert.ok(err instanceof AlreadyExistingWorkflow)
+              assert.strictEqual(err.message, 'Workflow "Greet:123" has already been executed')
+              return true
+            },
+          )
+        })
+
+        it('should save the workflow with the SUCCEED status', async () => {
+          await workerProxy.start({
+            workflowName: 'Greet',
+            workflowId: 'abc',
+            payload: 'John Doe',
+          })
+
+          const workflowRuntime = await repository.find('Greet:abc')
+          assert.strictEqual(workflowRuntime?.status, 'SUCCEED')
+        })
+      })
+
+      describe('for a failing workflow', () => {
+        const failing = async (name: string): Promise<string> => {
+          console.log('Execute the failing workflow', name)
+          throw new Error(`Oh no!!! ${name}!`)
+        }
+
+        beforeEach(() => {
+          createWorker(eventBus)(workflow('Failing', failing))
+        })
+
+        it('should save the workflow with the FAILED status', async () => {
+          await workerProxy.start({
+            workflowName: 'Failing',
+            workflowId: 'abc',
+            payload: 'Arg',
+          })
+
+          const workflowRuntime = await repository.find('Failing:abc')
+          assert.strictEqual(workflowRuntime?.status, 'FAILED')
+        })
       })
     })
   })

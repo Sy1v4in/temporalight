@@ -14,7 +14,7 @@ const createWorker =
         const result = await workflow.run(worker.payload)
         await eventBus.send(workflowId, { status: 'SUCCEED', result })
       } catch (error) {
-        await eventBus.send(workflowId, { status: 'FAIL', error })
+        await eventBus.send(workflowId, { status: 'FAILED', error })
       }
     })
   }
@@ -37,38 +37,25 @@ const executeWorkflow =
           if (existingWorkflow) throw new AlreadyExistingWorkflow(workflowId)
 
           eventBus.on(workflowId, (runtime) => {
-            switch (runtime.status) {
-              case 'STARTED':
-                repository.save({
-                  name: workerPayload.workflowName,
-                  id: workflowId,
-                  status: 'STARTED',
-                })
-                break
-              case 'SUCCEED':
-                eventBus.off(workflowId)
-                repository
-                  .save({
-                    name: workerPayload.workflowName,
-                    id: workflowId,
-                    status: 'SUCCEED',
-                  })
-                  .then(() => {
-                    if (waitForResult) resolve(runtime.result)
-                  })
-                break
-              case 'FAIL':
-                eventBus.off(workflowId)
-                repository
-                  .save({
-                    name: workerPayload.workflowName,
-                    id: workflowId,
-                    status: 'SUCCEED',
-                  })
-                  .then(() => {
-                    if (waitForResult) reject(runtime.error)
-                  })
+            let applyResolve = () => {
+              /* no op*/
             }
+            switch (runtime.status) {
+              case 'SUCCEED':
+                applyResolve = () => waitForResult && resolve(runtime.result)
+                eventBus.off(workflowId)
+                break
+              case 'FAILED':
+                applyResolve = () => waitForResult && reject(runtime.error)
+                eventBus.off(workflowId)
+            }
+            repository
+              .save({
+                name: workerPayload.workflowName,
+                id: workflowId,
+                status: runtime.status,
+              })
+              .then(applyResolve)
           })
 
           eventBus
