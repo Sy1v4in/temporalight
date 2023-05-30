@@ -1,4 +1,11 @@
-import { WorkerPayload, WorkerProxy, Workflow } from './types'
+import {
+  Worker,
+  WorkerPayload,
+  WorkerProxy,
+  Workflow,
+  WorkflowCallback,
+  WorkflowLifecycle,
+} from './types'
 import { wait } from '../core/utils'
 import { AlreadyExistingWorkflow } from '../domain/errors'
 import {
@@ -16,17 +23,45 @@ const runtimeId = (worker: WorkerPayload): string => `${worker.workflowName}:${w
 
 const createWorker =
   (eventBus: EventBus) =>
-  <Payload = unknown, Response = unknown>(workflow: Workflow<Payload, Response>): void => {
+  <Payload = unknown, Response = unknown>(workflow: Workflow<Payload, Response>): Worker => {
+    const listeners: Map<WorkflowLifecycle, WorkflowCallback[]> = new Map()
+
+    const executeCallbacks = async <T = unknown>(
+      lifecycle: WorkflowLifecycle,
+      result: T,
+    ): Promise<void> => {
+      await Promise.all(
+        (listeners.get(lifecycle) || []).map(async (callback) => {
+          try {
+            await callback(result)
+          } catch (e) {
+            console.error(`on${lifecycle}::callback error`, e)
+          }
+        }),
+      )
+    }
+
     eventBus.on(workflow.name, async (worker: WorkerPayload<Payload>) => {
       const workflowId = runtimeId(worker)
       await eventBus.send(workflowId, { status: 'START' })
       try {
         const result = await workflow.run(worker.payload)
         await eventBus.send(workflowId, { status: 'SUCCEED', result })
+        await executeCallbacks('SUCCESS', result)
       } catch (error) {
         await eventBus.send(workflowId, { status: 'FAILED', error })
+        await executeCallbacks('FAIL', error)
       }
     })
+
+    const worker: Worker = {
+      on: (lifecycle, callback) => {
+        const callbacks = listeners.get(lifecycle) || []
+        listeners.set(lifecycle, [...callbacks, callback])
+        return worker
+      },
+    }
+    return worker
   }
 
 const createWorkerProxy = (ports: Ports, options: Options = {}): WorkerProxy => ({

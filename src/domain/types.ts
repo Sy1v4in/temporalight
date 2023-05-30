@@ -1,3 +1,11 @@
+export type WorkflowLifecycle = 'SUCCESS' | 'FAIL'
+
+export type WorkflowCallback<T = unknown> = (result: T) => Promise<void>
+
+export type Worker = {
+  on: (lifecycle: WorkflowLifecycle, callback: WorkflowCallback) => Worker
+}
+
 export interface Workflow<Payload = unknown, Response = unknown> {
   name: string
   run: (args: Payload) => Promise<Response>
