@@ -14,6 +14,7 @@ import {
   isRetry,
   Options,
   Ports,
+  RetryStrategy,
   SucceedWorkflowRuntime,
   WorkflowRepository,
   WorkflowRuntime,
@@ -92,7 +93,7 @@ const executeWorkflow =
 
 const listenToSaveResult =
   ({ eventBus, repository }: Ports) =>
-  (workerPayload: WorkerPayload, { retry = false }: Options) => {
+  (workerPayload: WorkerPayload, { retry }: Options) => {
     const workflowId = runtimeId(workerPayload)
     eventBus.on(workflowId, async (runtime: WorkflowRuntime) => {
       const save = workflowRepository(repository, workflowId)
@@ -106,13 +107,14 @@ const listenToSaveResult =
             await save.fail(runtime)
             eventBus.off(workflowId)
           } else {
+            const retryStrategy = retry === true ? exponentialRetryStrategy() : retry
             const existingWorkflow = await repository.find(workflowId)
             const retryCount =
               existingWorkflow && isRetry(existingWorkflow) ? existingWorkflow.retryCount : 0
-            if (retryCount < 7) {
+            const delayBeforeTheNextRetry = retryStrategy(retryCount)
+            if (delayBeforeTheNextRetry > 0) {
               await save.retry(runtime, retryCount)
-              const delay = 500 * Math.pow(2, retryCount - 1)
-              await wait(delay)
+              await wait(delayBeforeTheNextRetry)
               await startWorkflow(eventBus)(workerPayload)
             } else {
               eventBus.off(workflowId)
@@ -122,6 +124,17 @@ const listenToSaveResult =
       }
     })
   }
+
+const exponentialRetryStrategy =
+  ({
+    maxRetries = 7,
+    initialDelay = 500,
+  }: {
+    maxRetries?: number
+    initialDelay?: number
+  } = {}): RetryStrategy =>
+  (retryCount) =>
+    retryCount < maxRetries ? initialDelay * Math.pow(2, retryCount) : -1
 
 const workflowRepository = (repository: WorkflowRepository, workflowId: string) => {
   const success = async (runtime: SucceedWorkflowRuntime) => {

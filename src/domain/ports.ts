@@ -65,6 +65,8 @@ export type Ports = {
   repository: WorkflowRepository
 }
 
+export type RetryStrategy = (tryCount: number) => number
+
 export type Options = {
-  retry?: boolean
+  retry?: boolean | RetryStrategy
 }
