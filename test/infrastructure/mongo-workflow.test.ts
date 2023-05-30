@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict'
 import { after, before, beforeEach, describe, it } from 'node:test'
 
-import { WorkflowRepository, WorkflowRuntime } from '@workflow-runner/domain/ports'
+import {
+  StartedWorkflowRuntime,
+  SucceedWorkflowRuntime,
+  WorkflowRepository,
+  WorkflowRuntime,
+} from '@workflow-runner/domain/ports'
 import {
   RepositoryManager,
   workflowRepositoryManager,
@@ -41,11 +46,11 @@ describe('Mongo Workflow Repository', () => {
   })
 
   it('should update the information when saving the workflow runtime many times', async () => {
-    const workflow: WorkflowRuntime = { name: 'Hello', id: 'Hello:123', status: 'STARTED' }
+    const workflow: StartedWorkflowRuntime = { name: 'Hello', id: 'Hello:123', status: 'STARTED' }
     await repository.save(workflow)
 
-    workflow.status = 'SUCCEED'
-    await repository.save(workflow)
+    const succeedWorkflow: SucceedWorkflowRuntime = { ...workflow, status: 'SUCCEED', result: 'Ok' }
+    await repository.save(succeedWorkflow)
 
     const savedWorkflow = await repository.find(workflow.id)
 

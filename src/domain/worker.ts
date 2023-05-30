@@ -1,6 +1,16 @@
 import { WorkerPayload, WorkerProxy, Workflow } from './types'
+import { wait } from '../core/utils'
 import { AlreadyExistingWorkflow } from '../domain/errors'
-import { EventBus, Ports } from '../domain/ports'
+import {
+  EventBus,
+  FailedWorkflowRuntime,
+  isRetry,
+  Options,
+  Ports,
+  SucceedWorkflowRuntime,
+  WorkflowRepository,
+  WorkflowRuntime,
+} from '../domain/ports'
 
 const runtimeId = (worker: WorkerPayload): string => `${worker.workflowName}:${worker.workflowId}`
 
@@ -17,17 +27,17 @@ const createWorker =
         await eventBus.send(workflowId, { status: 'FAILED', error })
       }
     })
-
   }
-const createWorkerProxy = (ports: Ports): WorkerProxy => ({
-  start: executeWorkflow(ports),
+
+const createWorkerProxy = (ports: Ports, options: Options = {}): WorkerProxy => ({
+  start: executeWorkflow(ports, options),
 })
 
 const startWorkflow = (eventBus: EventBus) => async (workerPayload: WorkerPayload) =>
   eventBus.send(workerPayload.workflowName, workerPayload)
 
 const executeWorkflow =
-  ({ eventBus, repository }: Ports) =>
+  ({ eventBus, repository }: Ports, options: Options) =>
   async (workerPayload: WorkerPayload) => {
     const workflowId = runtimeId(workerPayload)
 
@@ -40,14 +50,14 @@ const executeWorkflow =
       status: 'UNINITIALIZED',
     })
 
-    listenToSaveResult({ eventBus, repository })(workerPayload)
+    listenToSaveResult({ eventBus, repository })(workerPayload, options)
 
     return startWorkflow(eventBus)(workerPayload)
   }
 
 const listenToSaveResult =
   ({ eventBus, repository }: Ports) =>
-  (workerPayload: WorkerPayload) => {
+  (workerPayload: WorkerPayload, { retry = false }: Options) => {
     const workflowId = runtimeId(workerPayload)
     eventBus.on(workflowId, async (runtime: WorkflowRuntime) => {
       const save = workflowRepository(repository, workflowId)
@@ -57,8 +67,23 @@ const listenToSaveResult =
           eventBus.off(workflowId)
           break
         case 'FAILED':
-          await save.fail(runtime)
-          eventBus.off(workflowId)
+          if (!retry) {
+            await save.fail(runtime)
+            eventBus.off(workflowId)
+          } else {
+            const existingWorkflow = await repository.find(workflowId)
+            const retryCount =
+              existingWorkflow && isRetry(existingWorkflow) ? existingWorkflow.retryCount : 0
+            if (retryCount < 7) {
+              await save.retry(runtime, retryCount)
+              const delay = 500 * Math.pow(2, retryCount - 1)
+              await wait(delay)
+              await startWorkflow(eventBus)(workerPayload)
+            } else {
+              eventBus.off(workflowId)
+              await save.fail(runtime)
+            }
+          }
       }
     })
   }
@@ -81,10 +106,19 @@ const workflowRepository = (repository: WorkflowRepository, workflowId: string) 
       error: runtime.error,
     })
   }
+
+  const retry = async (runtime: FailedWorkflowRuntime, retryCount: number) => {
+    await repository.save({
+      name: runtime.name,
+      id: workflowId,
+      status: 'RETRY',
+      error: runtime.error,
+      retryCount: retryCount + 1,
     })
   }
   return {
     fail,
+    retry,
     success,
   }
 }
