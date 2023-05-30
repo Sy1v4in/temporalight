@@ -36,16 +36,6 @@ describe('Given a workflow nested in a worker', () => {
         workerProxy = createWorkerProxy({ eventBus, repository })
       })
 
-      it('should return the workflow result when running', async () => {
-        const workflowResult = await workerProxy.run({
-          workflowName: 'Greet',
-          workflowId: '123',
-          payload: 'Jane Doe',
-        })
-
-        assert.strictEqual(workflowResult, 'Hello, Jane Doe!')
-      })
-
       it('should return the workflow started status when starting', async () => {
         const isWorkflowStarted = await workerProxy.start({
           workflowName: 'Greet',

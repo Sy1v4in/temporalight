@@ -11,5 +11,4 @@ export type WorkerPayload<Payload = unknown> = {
 
 export type WorkerProxy = {
   start: (workerPayload: WorkerPayload) => Promise<unknown>
-  run: (workerPayload: WorkerPayload) => Promise<unknown>
 }
