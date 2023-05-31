@@ -31,7 +31,8 @@ For simplicity reasons a workflow should be able to be triggered via a network r
 with the result of the workflow.
 To do that, `temporalight` provides an event bus concept that could work remotely through the network. 
 
-From a client point of view, the `node` process where the workflow is executed, the event bus is created with a supplied full url:
+From a client point of view, the `node` process where the workflow is executed, the event bus is created with a supplied
+full url:
 ```typescript
 import { createWorker } from '@workflow-runner/domain/worker'
 import { workflow } from '@workflow-runner/domain/workflow'
@@ -43,6 +44,16 @@ createWorker(eventBus)(workflow('Greet', greet))
 ```
 
 You can find this example in the `samples/hello-word` directory.
+
+A retry strategy is also available. Using a retry strategy it is possible to restart a workflow that has failed.
+For now, the retry strategy is defined at the server handler. For later, we can imagine to override the strategy at the
+worker level.
+The default retry strategy is a simple exponential strategy, increasing the waiting time between retries up to a
+maximum backoff time.
+This algorithm could be changed when creating the workerProxy. The strategy is just a function that computes the delay
+before the next retry. To stop to retry running the workflow, the retry strategy function has to return -1.
+In this case, the workflow result is considered a fail.
+
 
 ### Run the application server
 

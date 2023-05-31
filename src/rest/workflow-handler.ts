@@ -5,7 +5,7 @@ import { BusinessError } from '../domain/errors'
 import { createWorkerProxy } from '../domain/worker'
 
 const runWorkflowHandler: (dep: Dependencies) => Handler = ({ logger, ...ports }) => {
-  const workerProxy = createWorkerProxy(ports)
+  const workerProxy = createWorkerProxy(ports, { retry: true })
   return async (req, res) => {
     const worker: WorkerBody = req.body
 
